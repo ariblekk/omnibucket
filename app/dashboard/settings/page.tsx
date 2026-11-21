@@ -1,7 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { IconDownload, IconUpload } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconDatabase,
+  IconDownload,
+  IconKey,
+  IconUpload,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import {
@@ -15,6 +21,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Tabs,
@@ -29,6 +43,7 @@ import { S3CredentialsCard } from "@/components/gateway/s3-credentials-card";
 export default function Page() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [password, setPassword] = useState("");
+  const [backupScope, setBackupScope] = useState<"full" | "credentials">("full");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -41,7 +56,7 @@ export default function Page() {
       const response = await fetch("/api/admin/backup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, scope: backupScope }),
       });
 
       if (!response.ok) {
@@ -56,13 +71,21 @@ export default function Page() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
+      const defaultFilename =
+        backupScope === "credentials"
+          ? "omnibucket-credentials.json"
+          : "omnibucket-backup.json";
       link.download =
         response.headers
           .get("Content-Disposition")
-          ?.match(/filename="?([^";]+)"?/i)?.[1] ?? "omnibucket-backup.json";
+          ?.match(/filename="?([^";]+)"?/i)?.[1] ?? defaultFilename;
       link.click();
       URL.revokeObjectURL(url);
-      toast.success("Database backup downloaded.");
+      toast.success(
+        backupScope === "credentials"
+          ? "Credentials backup downloaded."
+          : "Database backup downloaded.",
+      );
     } catch (cause) {
       toast.error(toMessage(cause));
     } finally {
@@ -144,10 +167,66 @@ export default function Page() {
               required
             />
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button type="submit" disabled={busy || !password}>
-                <IconDownload />
-                Download backup
-              </Button>
+              <ButtonGroup>
+                <Button type="submit" disabled={busy || !password}>
+                  <IconDownload />
+                  <span>
+                    {backupScope === "credentials"
+                      ? "Download credentials"
+                      : "Download full backup"}
+                  </span>
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      disabled={busy || !password}
+                      className="border-l border-primary-foreground/20 px-2"
+                      aria-label="Select backup type"
+                    >
+                      <IconChevronDown />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-64">
+                    <DropdownMenuRadioGroup
+                      value={backupScope}
+                      onValueChange={(val) =>
+                        setBackupScope(val as "full" | "credentials")
+                      }
+                    >
+                      <DropdownMenuRadioItem
+                        value="full"
+                        className="cursor-pointer py-2"
+                      >
+                        <IconDatabase className="text-muted-foreground" />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-xs">
+                            Full backup
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            All database data & configuration
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="credentials"
+                        className="cursor-pointer py-2"
+                      >
+                        <IconKey className="text-muted-foreground" />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-xs">
+                            Credentials only
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            Storage accounts & S3 credentials only
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </ButtonGroup>
               <Button
                 type="button"
                 variant="outline"

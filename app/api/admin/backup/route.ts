@@ -26,8 +26,10 @@ export async function POST(request: Request) {
 
     const body = (await request.json().catch(() => null)) as {
       password?: unknown;
+      scope?: unknown;
     } | null;
     const password = typeof body?.password === "string" ? body.password : "";
+    const scope = body?.scope === "credentials" ? "credentials" : "full";
 
     if (!password || !verifyAdminPassword(password)) {
       recordActionFailure(request, "backup");
@@ -41,9 +43,12 @@ export async function POST(request: Request) {
 
     clearActionFailures(request, "backup");
 
-    const backup = createBackup();
+    const backup = createBackup(scope);
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const filename = `omnibucket-credentials-${timestamp}.json`;
+    const filename =
+      scope === "credentials"
+        ? `omnibucket-credentials-${timestamp}.json`
+        : `omnibucket-backup-${timestamp}.json`;
 
     return json(backup, {
       headers: {

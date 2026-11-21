@@ -17,6 +17,8 @@ import { GatewayError } from "@/lib/errors";
 export const BACKUP_TYPE = "drive-gateway-backup";
 export const BACKUP_VERSION = 2;
 
+export type BackupScope = "full" | "credentials";
+
 const LEGACY_BACKUP_TYPE = "drive-gateway-credentials";
 const LEGACY_BACKUP_VERSION = 1;
 
@@ -164,15 +166,17 @@ export interface RestoreResult {
   restored: BackupCounts;
 }
 
-export function createBackup(): GatewayBackup {
+export function createBackup(scope: BackupScope = "full"): GatewayBackup {
   const db = getDb();
   const accounts = db.select().from(storageAccounts).all();
-  const usage = db.select().from(typeUsage).all();
-  const folderRows = db.select().from(folders).all();
-  const bucketRows = db.select().from(buckets).all();
   const credentials = db.select().from(s3Credentials).all();
-  const fileRows = db.select().from(files).all();
-  const attempts = db.select().from(loginAttempts).all();
+  const isFull = scope === "full";
+
+  const usage = isFull ? db.select().from(typeUsage).all() : [];
+  const folderRows = isFull ? db.select().from(folders).all() : [];
+  const bucketRows = isFull ? db.select().from(buckets).all() : [];
+  const fileRows = isFull ? db.select().from(files).all() : [];
+  const attempts = isFull ? db.select().from(loginAttempts).all() : [];
 
   return {
     type: BACKUP_TYPE,

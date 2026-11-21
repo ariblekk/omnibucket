@@ -1,19 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
-  IconCloudComputing,
+  IconApi,
   IconChartPie,
   IconCloud,
+  IconCloudComputing,
   IconFileStack,
   IconHistory,
+  IconLogout,
+  IconSettings,
 } from "@tabler/icons-react";
 
 import packageJson from "@/package.json";
 
 import { SidebarStorage } from "@/components/gateway/sidebar-storage";
 import { NavMain } from "@/components/nav-main";
-import { NavUser } from "@/components/nav-user";
+import { NavSecondary } from "@/components/nav-secondary";
 import {
   Sidebar,
   SidebarContent,
@@ -25,11 +30,6 @@ import {
 } from "@/components/ui/sidebar";
 
 const data = {
-  user: {
-    name: "Hallo Admin",
-    email: "admin@localhost",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Overview",
@@ -52,9 +52,31 @@ const data = {
       icon: IconHistory,
     },
   ],
+  navSecondary: [
+    {
+      title: "Settings",
+      url: "/dashboard/settings",
+      icon: IconSettings,
+    },
+    {
+      title: "API Docs (Swagger)",
+      url: "/docs",
+      icon: IconApi,
+      target: "_blank",
+    },
+  ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    toast.success("Signed out");
+    router.replace("/login");
+    router.refresh();
+  }
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -82,9 +104,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="mt-auto group-data-[collapsible=icon]:hidden">
           <SidebarStorage />
         </div>
+        <NavSecondary items={data.navSecondary} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => void handleLogout()}
+              tooltip="Log out"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              <IconLogout />
+              <span>Log out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

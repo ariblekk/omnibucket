@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2026-11-14
+
+### Added
+
+- **Scoped Backup Options (Full vs. Credentials-Only)**:
+  - Added `scope` parameter (`full` | `credentials`) to `createBackup()` (`lib/backup.ts`) and `POST /api/admin/backup`.
+  - Credentials-only backup exports connected `storageAccounts` and `s3Credentials` while leaving file/folder metadata and logs empty, fully compatible with existing restore procedures.
+  - Generates context-aware filenames: `omnibucket-credentials-[timestamp].json` for credentials-only and `omnibucket-backup-[timestamp].json` for full database backup.
+  - UI split button in **Settings > General**: main button shows dynamic label matching the selected scope, paired with a dropdown selector allowing one-click switching between Full and Credentials-only modes.
+- **Sidebar Secondary Navigation**:
+  - Added `NavSecondary` group in `components/app-sidebar.tsx` containing **Settings** (`/dashboard/settings`) and **API Docs (Swagger)** (`/docs`, opened in a new tab).
+  - Extended `NavSecondary` (`components/nav-secondary.tsx`) to support the `target` attribute on menu links.
+
+### Changed
+
+- **Direct Footer Logout**:
+  - Replaced `NavUser` dropdown and mock admin profile (`admin@localhost`) with a clean, direct **Log out** button in the sidebar footer (`components/app-sidebar.tsx`), including tooltip support when the sidebar is collapsed.
+
+### Removed
+
+- **NavUser Component**: Removed obsolete `components/nav-user.tsx`.
+- **Legacy Trash Route**: Removed the leftover `/dashboard/trash` page redirect (`app/dashboard/trash/page.tsx`), reflecting that object deletions are permanent.
+
+
 ## [1.0.4] - 2026-11-11
 
 ### Added
